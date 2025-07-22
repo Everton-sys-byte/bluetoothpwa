@@ -10,26 +10,33 @@
     <title>Bluetooth</title>
 
     <link rel="manifest" href="{{ asset('manifest.json') }}" />
+    
+    {{-- script relacionado a PWA (TWA) --}}
     <script>
         if (typeof navigator.serviceWorker !== 'undefined') {
             navigator.serviceWorker.register("{{ asset('pwabuilder-sw.js') }}")
         }
-        id = "btn-download"
     </script>
     <script defer>
         // Detecta se está rodando em modo standalone (instalado como app)
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
         if (isStandalone) {
-            // Oculta o botão se estiver rodando como app
-            document.getElementById('btn-download-apk').style.display = 'none';
+            document.addEventListener('DOMContentLoaded', function () {
+                document.getElementById('btn-download-apk').style.display = 'none';
+            });
         }
     </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
     <div class="container-full d-flex flex-column align-items-center justify-content-center" style="height: 100vh">
-        <a class="btn btn-primary" href="{{ asset('downloads/Bluetooth.apk') }}">Acessar Câmera</a>
+        <!-- Botão de abrir câmera -->
+        <label for="camera-input" class="btn btn-primary">Acessar Câmera</label>
+        <input type="file" accept="image/*" capture="environment" id="camera-input" style="display: none;" />
+
+        <a class="btn btn-primary mt-3" id="btn-bluetooth" href="{{ asset('downloads/Bluetooth.apk') }}">Bluetooth</a>
         <a class="btn btn-primary mt-3" id="btn-download-apk" href="{{ asset('downloads/Bluetooth.apk') }}">Download .APK</a>
     </div>
 </body>
