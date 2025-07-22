@@ -36,9 +36,38 @@
         <label for="camera-input" class="btn btn-primary">Acessar Câmera</label>
         <input type="file" accept="image/*" capture="environment" id="camera-input" style="display: none;" />
 
-        <a class="btn btn-primary mt-3" id="btn-bluetooth" href="{{ asset('downloads/Bluetooth.apk') }}">Bluetooth</a>
+        <a class="btn btn-primary mt-3" id="btn-bluetooth" href="">Bluetooth</a>
         <a class="btn btn-primary mt-3" id="btn-download-apk" href="{{ asset('downloads/Bluetooth.apk') }}">Download .APK</a>
     </div>
 </body>
+
+<script>
+    $(document).ready(function () {
+        $('#btn-bluetooth').on('click', async function () {
+            if (!navigator.bluetooth) {
+                alert('Seu navegador não suporta Web Bluetooth.');
+                return;
+            }
+
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['battery_service'] // Pode mudar conforme o dispositivo
+                });
+
+                console.log('Dispositivo encontrado:', device);
+                alert(`Dispositivo: ${device.name || 'Sem nome'}\nID: ${device.id}`);
+
+                const server = await device.gatt.connect();
+                console.log('Conectado ao GATT server:', server);
+
+                // Aqui você pode continuar lendo características do serviço, se quiser.
+            } catch (error) {
+                console.error('Erro ao conectar com Bluetooth:', error);
+                alert('Erro: ' + error.message);
+            }
+        });
+    });
+</script>
 
 </html>
