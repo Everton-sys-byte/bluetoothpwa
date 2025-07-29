@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 class PusherController extends Controller
 {
     public function index(){
-        dd("aqui");
+        // dd("aqui");
     }
 
     public function broadcast(Request $request) 
