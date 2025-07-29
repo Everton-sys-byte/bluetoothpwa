@@ -38,7 +38,7 @@
 
         <a class="btn btn-primary mt-3" id="btn-bluetooth" href="">Procurar beacons (Bluetooth)</a>
         <a class="btn btn-primary mt-3" id="btn-download-apk" href="{{ asset('downloads/Bluetooth.apk') }}">Download .APK (TWA)</a>
-        <a class="btn btn-success mt-3" href="beacons://" target="_blank">Abrir o app Beacons</a>
+        <a class="btn btn-success mt-3" href="beacons://?tenant_id=3&user_email=evertonlook2010@gmail.com" target="_blank">Abrir o app Beacons</a>
 
     </div>
 </body>
