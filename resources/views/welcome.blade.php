@@ -107,27 +107,6 @@
 
     $(document).ready(function() {
 
-        $("form").submit(function(e) {
-            e.preventDefault()
-
-            $.ajax({
-                url: '/broadcast',
-                method: 'POST',
-                headers: {
-                    'X-Socket-Id': pusher.connection.socket_id
-                },
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    message: $("form #message").val()
-                }
-            }).done(function(res) {
-
-                // console.log(res)
-                $("form #message").val("")
-            })
-        })
-
-
         $('#btn-bluetooth').on('click', async function() {
             if (!navigator.bluetooth) {
                 alert('Seu navegador não suporta Web Bluetooth.');
