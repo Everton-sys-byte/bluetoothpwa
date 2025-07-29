@@ -49,16 +49,11 @@
             </div>
             <div class="col-lg-8 col-12">
                 <div class="card mt-2 mt-lg-0">
+                    <div class="card-header">
+                        Beacons Encontrados
+                    </div>
                     <div class="card-body">
-                        <div class="top"></div>
-                        <div class="messages">
-                        </div>
-                        <div class="bottom">
-                            <form>
-                                <input class="form-control" type="text" id="message" placeholder="Nova mensagem"
-                                    autocomplete="off" required>
-                                <button class="btn btn-primary mt-3" type="submit">Enviar</button>
-                            </form>
+                        <div class="beacons">
                         </div>
                     </div>
                 </div>
@@ -78,36 +73,34 @@
 
     // mensagens recebidas (listener)
     channel.bind('beaconScanning', function(data) {
-        console.log(data)
-        const msg = data.message;
+        const beacon = data.scannedBeacon
+        console.log(beacon)
 
-        let beaconData;
-        try {
-            beaconData = typeof msg === 'string' ? JSON.parse(msg) : msg;
-        } catch (e) {
-            console.error('Erro ao fazer parse da mensagem:', msg);
-            return;
-        }
+        if (!beacon || !beacon.id)
+            return
 
-        const id = beaconData.id || 'unknown';
-        const $container = $(".messages");
+        const id = beacon.id
 
-        // Tenta encontrar um elemento com esse ID
-        let $el = $("#" + id);
+        const $container = $(".beacons");
 
-        const html = `
-        <strong>ID:</strong> ${id}<br>
-        <strong>Nome:</strong> ${beaconData.localName || '---'}<br>
-        <strong>RSSI:</strong> ${beaconData.rssi || '---'}<br>
-        <strong>Distância:</strong> ${beaconData.distance || '---'}
-    `;
+        let html = "";
 
+        // mostra informações de forma dinamica
+        Object.entries(beacon).forEach(([key, value]) => {
+            html += `<strong>${key}:</strong>${value ?? "---"}<br>`;
+        })
+
+        html+= "<hr>"
+        // substitui ":" por "_" para usar como id válido no DOM
+        // tenta selecionar um elemento que tenha esse id
+        let $el = $("#" + id.replace(/:/g, "_"))
+
+        // se tem elemento com esse id ele é atualizado
         if ($el.length > 0) {
-            // Se já existe, apenas atualiza
-            $el.html(html);
-        } else {
-            // Se não existe, cria e adiciona
-            $el = $(`<div class="message" id="${id}"></div>`).html(html);
+            $el.html(html); // atualiza se já existir
+        }else {
+            // cria um novo elemento com ID único baseado no beacon ID se não existir
+            $el = $(`<div class="beacon" id="${id.replace(/:/g, "_")}"></div>`).html(html);
             $container.append($el);
         }
     })

@@ -9,11 +9,11 @@ class PusherController extends Controller
 {
     public function broadcast(Request $request) 
     {
-        broadcast(new PusherBroadcast("public", $request->get('message')));
+        broadcast(new PusherBroadcast("public", $request->all()));
 
         return response()->json([
             'status' => 'OK',
-            'received' => $request->input('message')
+            'scannedBeacon' => $request->all()
         ]);
     }
 }
