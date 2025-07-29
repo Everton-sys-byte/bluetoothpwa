@@ -10,7 +10,7 @@
     <title>Bluetooth</title>
 
     <link rel="manifest" href="{{ asset('manifest.json') }}" />
-    
+
     {{-- script relacionado a PWA (TWA) --}}
     <script>
         if (typeof navigator.serviceWorker !== 'undefined') {
@@ -22,30 +22,94 @@
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
         if (isStandalone) {
-            document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('btn-download-apk').style.display = 'none';
             });
         }
     </script>
+
+    <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
-    <div class="container-full d-flex flex-column align-items-center justify-content-center" style="height: 100vh">
-        <!-- Botão de abrir câmera -->
-        <label for="camera-input" class="btn btn-primary">Acessar Câmera</label>
-        <input type="file" accept="image/*" capture="environment" id="camera-input" style="display: none;" />
+    <div class="container-full d-flex justify-content-center align-items-center" style="height: 100vh">
+        <div class="row">
+            <div class="col-lg-4 col-12 d-flex flex-column bg-sucess">
+                <!-- Botão de abrir câmera -->
+                <label for="camera-input" class="btn btn-primary">Acessar Câmera</label>
+                <input type="file" accept="image/*" capture="environment" id="camera-input" style="display: none;" />
 
-        <a class="btn btn-primary mt-3" id="btn-bluetooth" href="">Procurar beacons (Bluetooth)</a>
-        <a class="btn btn-primary mt-3" id="btn-download-apk" href="{{ asset('downloads/Bluetooth.apk') }}">Download .APK (TWA)</a>
-        <a class="btn btn-success mt-3" href="beacons://?tenant_id=3&user_email=evertonlook2010@gmail.com" target="_blank">Abrir o app Beacons</a>
-
+                <a class="btn btn-primary mt-2" id="btn-bluetooth" href="">Procurar beacons (Bluetooth)</a>
+                <a class="btn btn-primary mt-2" id="btn-download-apk"
+                    href="{{ asset('downloads/Bluetooth.apk') }}">Download
+                    .APK (TWA)</a>
+                <a class="btn btn-success mt-2" href="beacons://?tenant_id=3&user_email=evertonlook2010@gmail.com"
+                    target="_blank">Abrir o app Beacons</a>
+            </div>
+            <div class="col-lg-8 col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="top"></div>
+                        <div class="messages">
+                            @include('receive', ['message' => ''])
+                        </div>
+                        <div class="bottom">
+                            <form>
+                                <input class="form-control" type="text" id="message" placeholder="Nova mensagem"
+                                    autocomplete="off" required>
+                                <button class="btn btn-primary mt-3" type="submit">Enviar</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 
+
+
 <script>
-    $(document).ready(function () {
-        $('#btn-bluetooth').on('click', async function () {
+    const pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
+        cluster: 'eu'
+    })
+    const channel = pusher.subscribe('public')
+
+    $(document).ready(function() {
+
+        // mensagens recebidas
+        channel.bind('chat', function(data) {
+            $.post('/receive', {
+                _token: '{{ csrf_token() }}',
+                message: data.message
+            }).done(function(res) {
+                $(".messages > .message").last().after(res)
+            })
+        })
+
+        $("form").submit(function(e) {
+            e.preventDefault()
+
+            $.ajax({
+                url: '/broadcast',
+                method: 'POST',
+                headers: {
+                    'X-Socket-Id': pusher.connection.socket_id
+                },
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    message: $("form #message").val()
+                }
+            }).done(function(res) {
+
+                $(".messages > .message").last().after(res)
+                $("form #message").val("")
+            })
+        })
+
+
+        $('#btn-bluetooth').on('click', async function() {
             if (!navigator.bluetooth) {
                 alert('Seu navegador não suporta Web Bluetooth.');
                 return;
@@ -54,7 +118,9 @@
             try {
                 const device = await navigator.bluetooth.requestDevice({
                     acceptAllDevices: true,
-                    optionalServices: ['battery_service'] // Pode mudar conforme o dispositivo
+                    optionalServices: [
+                        'battery_service'
+                    ] // Pode mudar conforme o dispositivo
                 });
 
                 console.log('Dispositivo encontrado:', device);
