@@ -33,7 +33,7 @@
 </head>
 
 <body>
-    <div class="container-full d-flex justify-content-center align-items-center" style="height: 100vh">
+    <div class="container-full d-flex justify-content-center align-items-center w-100 p-0" style="height: 100dvh">
         <div class="row">
             <div class="col-lg-4 col-12 d-flex flex-column bg-sucess">
                 <!-- Botão de abrir câmera -->
