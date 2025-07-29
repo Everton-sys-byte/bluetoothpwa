@@ -52,7 +52,6 @@
                     <div class="card-body">
                         <div class="top"></div>
                         <div class="messages">
-                            @include('receive', ['message' => ''])
                         </div>
                         <div class="bottom">
                             <form>
@@ -71,13 +70,14 @@
 
 
 <script>
+
     const pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
         cluster: 'us2'
     })
 
     const channel = pusher.subscribe('public')
 
-    // mensagens recebidas
+    // mensagens recebidas (listener)
     channel.bind('chat', function(data) {
         console.log(data)
         const msg = data.message;
