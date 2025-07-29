@@ -36,8 +36,10 @@
         <label for="camera-input" class="btn btn-primary">Acessar Câmera</label>
         <input type="file" accept="image/*" capture="environment" id="camera-input" style="display: none;" />
 
-        <a class="btn btn-primary mt-3" id="btn-bluetooth" href="">Bluetooth</a>
-        <a class="btn btn-primary mt-3" id="btn-download-apk" href="{{ asset('downloads/Bluetooth.apk') }}">Download .APK</a>
+        <a class="btn btn-primary mt-3" id="btn-bluetooth" href="">Procurar beacons (Bluetooth)</a>
+        <a class="btn btn-primary mt-3" id="btn-download-apk" href="{{ asset('downloads/Bluetooth.apk') }}">Download .APK (TWA)</a>
+        <a class="btn btn-success mt-3" href="beacons://" target="_blank">Abrir o app Beacons</a>
+
     </div>
 </body>
 
