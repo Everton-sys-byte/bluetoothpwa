@@ -70,7 +70,6 @@
 
 
 <script>
-
     const pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
         cluster: 'us2'
     })
@@ -78,16 +77,39 @@
     const channel = pusher.subscribe('public')
 
     // mensagens recebidas (listener)
-    channel.bind('chat', function(data) {
+    channel.bind('beaconScanning', function(data) {
         console.log(data)
         const msg = data.message;
 
-        const container = document.querySelector(".messages");
+        let beaconData;
+        try {
+            beaconData = typeof msg === 'string' ? JSON.parse(msg) : msg;
+        } catch (e) {
+            console.error('Erro ao fazer parse da mensagem:', msg);
+            return;
+        }
 
-        const el = document.createElement("div");
-        el.classList.add("message");
-        el.textContent = msg;
-        container.appendChild(el);
+        const id = beaconData.id || 'unknown';
+        const $container = $(".messages");
+
+        // Tenta encontrar um elemento com esse ID
+        let $el = $("#" + id);
+
+        const html = `
+        <strong>ID:</strong> ${id}<br>
+        <strong>Nome:</strong> ${beaconData.localName || '---'}<br>
+        <strong>RSSI:</strong> ${beaconData.rssi || '---'}<br>
+        <strong>Distância:</strong> ${beaconData.distance || '---'}
+    `;
+
+        if ($el.length > 0) {
+            // Se já existe, apenas atualiza
+            $el.html(html);
+        } else {
+            // Se não existe, cria e adiciona
+            $el = $(`<div class="message" id="${id}"></div>`).html(html);
+            $container.append($el);
+        }
     })
 
     $(document).ready(function() {

@@ -13,13 +13,14 @@ class PusherBroadcast implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
 
-    public $message;
+    public $channelName, $message;
 
     /**
      * Create a new event instance.
      */
-    public function __construct($message)
+    public function __construct($channelName, $message)
     {
+        $this->channelName = $channelName;
         $this->message = $message;
     }
 
@@ -36,6 +37,6 @@ class PusherBroadcast implements ShouldBroadcast
     // nome do evento que vai ser ouvido pelo cliente
     public function broadcastAs(): string 
     {
-        return 'chat';
+        return 'beaconScanning';
     }
 }
