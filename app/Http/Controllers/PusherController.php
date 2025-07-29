@@ -16,9 +16,4 @@ class PusherController extends Controller
             'received' => $request->input('message')
         ]);
     }
-
-    public function receive(Request $request)
-    {
-        return view('receive', ['message' => $request->get('message')]);
-    }
 }
