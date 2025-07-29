@@ -72,24 +72,16 @@
 
 <script>
     const pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
-        cluster: 'eu'
+        cluster: 'us2'
     })
 
     const channel = pusher.subscribe('public')
 
     // mensagens recebidas
     channel.bind('chat', function(data) {
-        // $.post('/receive', {
-        //     _token: '{{ csrf_token() }}',
-        //     message: data.message
-        // }).done(function(res) {
-        //     console.log(res)
-        // })
-
-        // Aqui 'data' tem { message: "..."} vindo do backend
+        console.log(data)
         const msg = data.message;
 
-        // Insere na div de mensagens, por exemplo:
         const container = document.querySelector(".messages");
 
         const el = document.createElement("div");
@@ -115,7 +107,7 @@
                 }
             }).done(function(res) {
 
-                console.log(res)
+                // console.log(res)
                 $("form #message").val("")
             })
         })

@@ -9,7 +9,7 @@ class PusherController extends Controller
 {
     public function broadcast(Request $request) 
     {
-        broadcast(new PusherBroadcast($request->get('message')))->toOthers();
+        broadcast(new PusherBroadcast($request->get('message')));
         // return view('broadcast', ['message' => $request->get('message')]);
 
         return response()->json([
