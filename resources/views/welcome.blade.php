@@ -52,7 +52,7 @@
                     <div class="card-header">
                         Beacons Encontrados
                     </div>
-                    <div class="card-body">
+                    <div class="card-body" style="max-height: 400px; overflow: auto;">
                         <div class="beacons">
                         </div>
                     </div>
