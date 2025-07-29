@@ -33,6 +33,7 @@ class PusherBroadcast implements ShouldBroadcast
         return [new Channel('public')];
     }
 
+    // nome do evento que vai ser ouvido pelo cliente
     public function broadcastAs(): string 
     {
         return 'chat';
