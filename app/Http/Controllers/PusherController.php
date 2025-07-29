@@ -7,10 +7,6 @@ use Illuminate\Http\Request;
 
 class PusherController extends Controller
 {
-    public function index(){
-        // dd("aqui");
-    }
-
     public function broadcast(Request $request) 
     {
         broadcast(new PusherBroadcast($request->get('message')))->toOthers();

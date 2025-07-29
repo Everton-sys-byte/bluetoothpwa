@@ -48,7 +48,7 @@
                     target="_blank">Abrir o app Beacons</a>
             </div>
             <div class="col-lg-8 col-12">
-                <div class="card">
+                <div class="card mt-2 mt-lg-0">
                     <div class="card-body">
                         <div class="top"></div>
                         <div class="messages">
@@ -74,19 +74,31 @@
     const pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
         cluster: 'eu'
     })
+
     const channel = pusher.subscribe('public')
 
-    $(document).ready(function() {
+    // mensagens recebidas
+    channel.bind('chat', function(data) {
+        // $.post('/receive', {
+        //     _token: '{{ csrf_token() }}',
+        //     message: data.message
+        // }).done(function(res) {
+        //     console.log(res)
+        // })
 
-        // mensagens recebidas
-        channel.bind('chat', function(data) {
-            $.post('/receive', {
-                _token: '{{ csrf_token() }}',
-                message: data.message
-            }).done(function(res) {
-                $(".messages > .message").last().after(res)
-            })
-        })
+        // Aqui 'data' tem { message: "..."} vindo do backend
+        const msg = data.message;
+
+        // Insere na div de mensagens, por exemplo:
+        const container = document.querySelector(".messages");
+
+        const el = document.createElement("div");
+        el.classList.add("message");
+        el.textContent = msg;
+        container.appendChild(el);
+    })
+
+    $(document).ready(function() {
 
         $("form").submit(function(e) {
             e.preventDefault()
@@ -103,7 +115,7 @@
                 }
             }).done(function(res) {
 
-                $(".messages > .message").last().after(res)
+                console.log(res)
                 $("form #message").val("")
             })
         })
