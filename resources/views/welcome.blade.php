@@ -132,8 +132,8 @@
                 signal: abortController.signal
             });
 
-            resultsDiv.innerHTML = device.manufacturerData
-            // Para o scan após 30 segundos para economizar bateria
+            resultsDiv.innerHTML = device.manufacturerData || device.id || device.name
+            // Para o scan após 30 segundos para economizar bateria 
             setTimeout(() => {
                 abortController.abort();
                 console.log('Scan parado.');
