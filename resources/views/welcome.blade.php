@@ -149,15 +149,15 @@
         const companyData = event.manufacturerData.get(APPLE_COMPANY_ID);
 
         // Verifica se é um pacote da Apple
-        if (!companyData) {
-            return;
-        }
+        // if (!companyData) {
+            // return;
+        // }
 
         // `companyData` é um DataView. Verificamos se tem o tamanho esperado
         // e o tipo de iBeacon (0x0215)
-        if (companyData.byteLength < 23 || companyData.getUint16(0, false) !== 0x0215) {
-            return;
-        }
+        // if (companyData.byteLength < 23 || companyData.getUint16(0, false) !== 0x0215) {
+            // return;
+        // }
 
         // Decodifica os dados do iBeacon
         const uuid = parseUUID(companyData, 2);
