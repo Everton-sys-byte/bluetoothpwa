@@ -169,6 +169,7 @@
 
         const beaconId = `${uuid}-${major}-${minor}`;
 
+        resultsDiv.innerHTML = `${uuid}-${major}-${minor}`
         // Exibe os resultados na tela
         let beaconDiv = document.getElementById(beaconId);
         if (!beaconDiv) {
