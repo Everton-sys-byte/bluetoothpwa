@@ -132,6 +132,7 @@
                 signal: abortController.signal
             });
 
+            resultsDiv.innerHTML = device.manufacturerData
             // Para o scan após 30 segundos para economizar bateria
             setTimeout(() => {
                 abortController.abort();
