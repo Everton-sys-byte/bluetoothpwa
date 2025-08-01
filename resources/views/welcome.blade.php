@@ -117,9 +117,7 @@
                 optionalServices: [] // Necessário para ver advertisements
             });
 
-            console.log(
-                `Dispositivo ${device.name || device.id} selecionado. Observando advertisements...`
-            );
+            resultsDiv.innerHTML = `Dispositivo ${device.name || device.id} selecionado. Observando advertisements...`
 
             // AbortController para parar o scan depois de um tempo
             const abortController = new AbortController();
