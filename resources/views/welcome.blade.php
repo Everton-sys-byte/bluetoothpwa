@@ -161,11 +161,12 @@
         promise.then((result) => {
             scan = result
             bluetooth.addEventListener('advertisementreceived', (event) => {
-                result.innerHTML += "advertisementreceived"
-                result.innerHTML += event.manufacturerData
+                resultsDiv.innerHTML += "advertisementreceived"
+                resultsDiv.innerHTML += event.manufacturerData
             })
         })
     }
+
     function handleAdvertisement(event) {
         const companyData = event.manufacturerData.get(APPLE_COMPANY_ID);
 
