@@ -41,6 +41,7 @@
                 <input type="file" accept="image/*" capture="environment" id="camera-input" style="display: none;" />
 
                 <button class="btn btn-primary mt-2" id="btn-bluetooth">Procurar beacons (Bluetooth)</button>
+                <button class="btn btn-primary mt-2" id="btn-lowenergy">Start Low Energy Scan</button>
 
                 <a class="btn btn-primary mt-2" id="btn-download-apk"
                     href="{{ asset('downloads/Bluetooth.apk') }}">Download
@@ -145,6 +146,25 @@
         }
     });
 
+    $('#btn-lowenergy').click(() => {
+        startLEScan()
+    })
+
+    function startLEScan(event){
+        if(!navigator.bluetooth)
+            return 
+        
+        const promise = navigator.bluetooth.requestLEScan({
+            acceptAllAdvertisements: true,
+        })
+
+        promise.then((result) => {
+            scan = result
+            bluetooth.addEventListener('advertisementreceived', (event) => {
+                result.innerHTML+= event.manufacturerData
+            })
+        })
+    }
     function handleAdvertisement(event) {
         const companyData = event.manufacturerData.get(APPLE_COMPANY_ID);
 
