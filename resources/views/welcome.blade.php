@@ -153,7 +153,7 @@
     function startLEScan(event){
         if(!navigator.bluetooth)
             return 
-        
+
         const promise = navigator.bluetooth.requestLEScan({
             acceptAllAdvertisements: true,
         })
@@ -161,7 +161,8 @@
         promise.then((result) => {
             scan = result
             bluetooth.addEventListener('advertisementreceived', (event) => {
-                result.innerHTML+= event.manufacturerData
+                result.innerHTML += "advertisementreceived"
+                result.innerHTML += event.manufacturerData
             })
         })
     }
