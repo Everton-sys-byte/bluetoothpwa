@@ -151,7 +151,7 @@
         startLEScan()
     })
 
-    function startLEScan(event) {
+    async function startLEScan(event) {
         if (!navigator.bluetooth)
             return
 
