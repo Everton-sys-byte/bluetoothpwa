@@ -118,7 +118,8 @@
                 optionalServices: [] // Necessário para ver advertisements
             });
 
-            resultsDiv.innerHTML = `Dispositivo ${device.name || device.id} selecionado. Observando advertisements...`
+            resultsDiv.innerHTML =
+                `Dispositivo ${device.name || device.id} selecionado. Observando advertisements...`
 
             // AbortController para parar o scan depois de um tempo
             const abortController = new AbortController();
@@ -150,21 +151,35 @@
         startLEScan()
     })
 
-    function startLEScan(event){
-        if(!navigator.bluetooth)
-            return 
+    function startLEScan(event) {
+        if (!navigator.bluetooth)
+            return
 
-        const promise = navigator.bluetooth.requestLEScan({
-            acceptAllAdvertisements: true,
-        })
+        try {
+            scan = await navigator.bluetooth.requestLEScan({
+                acceptAllAdvertisements: true
+            });
 
-        promise.then((result) => {
-            scan = result
-            bluetooth.addEventListener('advertisementreceived', (event) => {
-                resultsDiv.innerHTML += "advertisementreceived"
-                resultsDiv.innerHTML += event.manufacturerData
-            })
-        })
+            navigator.bluetooth.addEventListener('advertisementreceived', (event) => {
+                const rssi = event.rssi;
+                const txPower = event.txPower;
+
+                let output = `<strong>RSSI:</strong> ${rssi} dBm<br>`;
+                output += `<strong>TX Power:</strong> ${txPower} dBm<br>`;
+
+                for (const [companyId, dataView] of event.manufacturerData.entries()) {
+                    const hex = [...new Uint8Array(dataView.buffer)]
+                        .map(b => b.toString(16).padStart(2, '0')).join(' ');
+                    output += `<strong>Company ID:</strong> ${companyId}<br>`;
+                    output += `<strong>Manufacturer Data:</strong> ${hex}<br><hr>`;
+                }
+
+                document.getElementById("resultsDiv").innerHTML += output;
+            });
+
+        } catch (error) {
+            console.error('Erro ao iniciar LE Scan:', error);
+        }
     }
 
     function handleAdvertisement(event) {
@@ -172,13 +187,13 @@
 
         // Verifica se é um pacote da Apple
         // if (!companyData) {
-            // return;
+        // return;
         // }
 
         // `companyData` é um DataView. Verificamos se tem o tamanho esperado
         // e o tipo de iBeacon (0x0215)
         // if (companyData.byteLength < 23 || companyData.getUint16(0, false) !== 0x0215) {
-            // return;
+        // return;
         // }
 
         // Decodifica os dados do iBeacon
