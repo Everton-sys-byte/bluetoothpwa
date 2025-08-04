@@ -24,9 +24,7 @@
 //                    optionalServices: [] // Necessário para ver advertisements
 //                });
                 const device = await navigator.bluetooth.requestDevice({
-                    filters: [{
-                        manufacturerData: { [APPLE_COMPANY_ID]: {} }
-                    }],
+                    filters: [],
                     optionalServices: [] // Necessário para inspecionar advertisements
                 });
 
