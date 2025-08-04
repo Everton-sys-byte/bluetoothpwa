@@ -24,6 +24,7 @@
 //                    optionalServices: [] // Necessário para ver advertisements
 //                });
                 const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
                     filters: [],
                     optionalServices: [] // Necessário para inspecionar advertisements
                 });
