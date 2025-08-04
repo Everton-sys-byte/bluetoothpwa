@@ -1,101 +1,160 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>Leitor de iBeacon via Web Bluetooth (com Try/Catch)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scanner de iBeacon (Experimental)</title>
+  <meta name="theme-color" content="#2196f3" />
+  <meta name="description" content="Scanner experimental de iBeacons via Web Bluetooth API" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+    }
+    button {
+      background-color: #2196f3;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 20px 0;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    #log {
+      text-align: left;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 20px;
+      height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+      color: #333;
+    }
+    .info {
+      color: #555;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Leitor de iBeacon com JavaScript</h1>
-    <button id="scanButton">Procurar Dispositivos</button>
-    <div id="results"></div>
+  <h1>📡 Scanner de iBeacon</h1>
+  <p class="info">Clique no botão abaixo para escanear dispositivos iBeacon próximos.</p>
+  <p class="info">⚠️ Requer Chrome/Edge no Android e conexão HTTPS.</p>
 
-    <script>
-        const scanButton = document.getElementById('scanButton');
-        const resultsDiv = document.getElementById('results');
-        const APPLE_COMPANY_ID = 0x004C;
+  <button id="scanButton" onclick="scanForBeacons()" disabled>🔍 Escanear iBeacons</button>
 
-        scanButton.addEventListener('click', async () => {
-            try {
-                resultsDiv.innerHTML = 'Procurando...';
-                // ATENÇÃO: acceptAllDevices mostra TODOS os dispositivos,
-                // e o script só vai ouvir o que for selecionado.
-                const device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
-                    optionalServices: []
-                });
+  <div id="log">Aguardando início...</div>
 
-                resultsDiv.innerHTML += `Dispositivo ${device.name || device.id} selecionado. Observando advertisements...`;
-                const abortController = new AbortController();
-                device.addEventListener('advertisementreceived', handleAdvertisement);
-                await device.watchAdvertisements({ signal: abortController.signal });
+  <script>
+    const log = document.getElementById('log');
+    const scanButton = document.getElementById('scanButton');
 
-                setTimeout(() => {
-                    abortController.abort();
-                    resultsDiv.innerHTML += 'Scan parado.';
-                    resultsDiv.innerHTML += '<p>Busca finalizada.</p>';
-                }, 30000);
+    // Habilitar botão após o evento beforeinstallprompt (indica que estamos em um ambiente PWA compatível)
+    window.addEventListener('load', () => {
+      // Mesmo sem PWA, vamos habilitar o botão no load (mas o Bluetooth precisa de interação)
+      scanButton.disabled = false;
+      log.textContent = 'Pronto para escanear. Clique no botão.';
+    });
 
-            } catch (error) {
-                resultsDiv.innerHTML += 'Erro principal:', error;
-                resultsDiv.innerHTML = `Erro: ${error.message}`;
-            }
+    async function scanForBeacons() {
+      log.textContent = 'Iniciando escaneamento BLE...\n';
+
+      try {
+        // Solicitar dispositivo BLE com escuta de anúncios
+        const device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [] // Não precisamos de serviços específicos
         });
 
-        function handleAdvertisement(event) {
-            // O bloco try...catch é colocado aqui para tratar cada pacote individualmente.
-            try {
-                const companyData = event.manufacturerData.get(APPLE_COMPANY_ID);
+        device.addEventListener('advertisementreceived', event => {
+          const { device: btDevice, rssi, manufacturerData, serviceData } = event;
 
-                // Esta verificação é crucial e está fora do try/catch
-                // para evitar processamento desnecessário.
-                if (!companyData || companyData.byteLength < 23 || companyData.getUint16(0, false) !== 0x0215) {
-                    // Se não for um pacote iBeacon válido, simplesmente o ignora.
-                    return;
-                }
+          const name = btDevice.name || 'Desconhecido';
+          log.textContent += `\n🔹 Dispositivo: ${name}`;
+          log.textContent += `\n   RSSI: ${rssi} dBm`;
 
-                // Se passou na verificação, tenta decodificar.
-                const uuid = parseUUID(companyData, 2);
-                const major = companyData.getUint16(18, false);
-                const minor = companyData.getUint16(20, false);
-                const txPower = companyData.getInt8(22);
-                const rssi = event.rssi;
+          // Verificar manufacturerData (onde está o iBeacon)
+          let foundBeacon = false;
+          for (const [companyId, data] of manufacturerData) {
+            const dataHex = Array.from(data).map(b => b.toString(16).padStart(2, '0')).join('');
+            log.textContent += `\n   Manufacturer ID: 0x${companyId.toString(16).toUpperCase()}`;
+            log.textContent += `\n   Dados: ${dataHex}`;
 
-                const beaconId = `${uuid}-${major}-${minor}`;
-                
-                let beaconDiv = document.getElementById(beaconId);
-                if (!beaconDiv) {
-                    if (resultsDiv.innerHTML === 'Procurando...') resultsDiv.innerHTML = '';
-                    beaconDiv = document.createElement('div');
-                    beaconDiv.id = beaconId;
-                    resultsDiv.appendChild(beaconDiv);
-                }
+            // iBeacon usa Company ID Apple: 0x004C e começa com 0x0215
+            if (companyId === 0x004C && dataHex.length >= 50 && dataHex.substr(2, 6) === '0215') {
+              // Estrutura: 4c00 0215 [UUID 32] [Major 4] [Minor 4] [TxPower 2]
+              const uuid = [
+                dataHex.substr(8, 8),
+                dataHex.substr(16, 4),
+                dataHex.substr(20, 4),
+                dataHex.substr(24, 4),
+                dataHex.substr(28, 12)
+              ].join('-');
+              const major = parseInt(dataHex.substr(36, 4), 16);
+              const minor = parseInt(dataHex.substr(40, 4), 16);
+              const txPower = parseInt(dataHex.substr(44, 2), 16) - 256; // signed 8-bit
 
-                beaconDiv.innerHTML = `
-                    <strong>iBeacon Encontrado!</strong><br>
-                    <strong>RSSI:</strong> ${rssi} dBm<br>
-                    <strong>UUID:</strong> ${uuid}<br>
-                    <strong>Major:</strong> ${major}<br>
-                    <strong>Minor:</strong> ${minor}<br>
-                    <strong>TX Power:</strong> ${txPower} dBm<br>
-                    <hr>
-                `;
-            } catch (error) {
-                // Se ocorrer um erro ao decodificar, ele será capturado aqui.
-                // Isso evita que o programa pare.
-                resultsDiv.innerHTML += 'Ignorando pacote de anúncio não-iBeacon ou malformado.';
+              const distance = estimateDistance(txPower, rssi);
+
+              log.textContent += `\n   ✅ iBeacon Detectado!`;
+              log.textContent += `\n      UUID: ${uuid}`;
+              log.textContent += `\n      Major: ${major}`;
+              log.textContent += `\n      Minor: ${minor}`;
+              log.textContent += `\n      Potência (Tx): ${txPower} dBm`;
+              log.textContent += `\n      Distância estimada: ${distance.toFixed(2)} m`;
+              log.textContent += '\n' + '-'.repeat(40);
+
+              foundBeacon = true;
             }
-        }
+          }
 
-        function parseUUID(dataView, offset) {
-            let uuid = '';
-            for (let i = 0; i < 16; i++) {
-                const hex = dataView.getUint8(offset + i).toString(16).padStart(2, '0');
-                uuid += hex;
-                if (i === 3 || i === 5 || i === 7 || i === 9) {
-                    uuid += '-';
-                }
-            }
-            return uuid;
+          if (!foundBeacon) {
+            log.textContent += `\n   ❌ Não é um iBeacon reconhecido.\n`;
+          }
+        });
+
+        // Iniciar escuta de anúncios
+        device.addEventListener('gattserverdisconnected', () => {
+          log.textContent += '\n❌ Conexão BLE perdida.\n';
+        });
+
+        // Conectar para começar a receber anúncios
+        await device.gatt.connect();
+        log.textContent += '\n🟢 Escaneamento ativo... (pare de escanear recarregando a página)\n';
+
+      } catch (error) {
+        log.textContent += `\n❌ Erro: ${error.message}\n`;
+        if (error.name === 'NotAllowedError') {
+          log.textContent += 'Você precisa permitir o acesso ao Bluetooth e interagir com a página.\n';
         }
-    </script>
+      }
+    }
+
+    // Função para estimar distância com base em RSSI e TxPower
+    function estimateDistance(txPower, rssi) {
+      if (rssi === 0) return -1;
+      const ratio = rssi / txPower;
+      if (ratio < 1.0) {
+        return Math.pow(ratio, 10);
+      } else {
+        return 0.89976 * Math.pow(ratio, 7.7095) + 0.111;
+      }
+    }
+  </script>
 </body>
 </html>
