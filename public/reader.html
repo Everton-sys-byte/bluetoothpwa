@@ -1,49 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Leitor de iBeacon via Web Bluetooth</title>
+    <title>Leitor de iBeacon via Web Bluetooth (com Try/Catch)</title>
 </head>
 <body>
     <h1>Leitor de iBeacon com JavaScript</h1>
-    <button id="scanButton">Procurar iBeacons</button>
+    <button id="scanButton">Procurar Dispositivos</button>
     <div id="results"></div>
 
     <script>
         const scanButton = document.getElementById('scanButton');
         const resultsDiv = document.getElementById('results');
-        const APPLE_COMPANY_ID = 0x004C; // ID da Apple para iBeacons
+        const APPLE_COMPANY_ID = 0x004C;
 
         scanButton.addEventListener('click', async () => {
             try {
-                console.log('Solicitando dispositivo Bluetooth...');
                 resultsDiv.innerHTML = 'Procurando...';
-
-                // Solicita permissão ao usuário para escanear
-//                const device = await navigator.bluetooth.requestDevice({
-//                    acceptAllDevices: true,
-//                    optionalServices: [] // Necessário para ver advertisements
-//                });
+                // ATENÇÃO: acceptAllDevices mostra TODOS os dispositivos,
+                // e o script só vai ouvir o que for selecionado.
                 const device = await navigator.bluetooth.requestDevice({
-                    filters: [{namePrefix: "M"}],
-                    optionalServices: [] // Necessário para inspecionar advertisements
+                    acceptAllDevices: true,
+                    optionalServices: []
                 });
-
-
 
                 console.log(`Dispositivo ${device.name || device.id} selecionado. Observando advertisements...`);
-
-                // AbortController para parar o scan depois de um tempo
                 const abortController = new AbortController();
-
-                // Adiciona o listener para "escutar" os pacotes
-                device.addEventListener('advertisementreceived', (event) => {
-                    handleAdvertisement(event);
-                });
-
-                // Inicia o scan
+                device.addEventListener('advertisementreceived', handleAdvertisement);
                 await device.watchAdvertisements({ signal: abortController.signal });
 
-                // Para o scan após 30 segundos para economizar bateria
                 setTimeout(() => {
                     abortController.abort();
                     console.log('Scan parado.');
@@ -51,51 +35,54 @@
                 }, 30000);
 
             } catch (error) {
-                console.error('Ocorreu um erro:', error);
+                console.error('Erro principal:', error);
                 resultsDiv.innerHTML = `Erro: ${error.message}`;
             }
         });
 
         function handleAdvertisement(event) {
-            const companyData = event.manufacturerData.get(APPLE_COMPANY_ID);
+            // O bloco try...catch é colocado aqui para tratar cada pacote individualmente.
+            try {
+                const companyData = event.manufacturerData.get(APPLE_COMPANY_ID);
 
-            // Verifica se é um pacote da Apple
-//            if (!companyData) {
-//                return;
-//            }
+                // Esta verificação é crucial e está fora do try/catch
+                // para evitar processamento desnecessário.
+                if (!companyData || companyData.byteLength < 23 || companyData.getUint16(0, false) !== 0x0215) {
+                    // Se não for um pacote iBeacon válido, simplesmente o ignora.
+                    return;
+                }
 
-            // `companyData` é um DataView. Verificamos se tem o tamanho esperado
-            // e o tipo de iBeacon (0x0215)
-//            if (companyData.byteLength < 23 || companyData.getUint16(0, false) !== 0x0215) {
-//                return;
-//            }
+                // Se passou na verificação, tenta decodificar.
+                const uuid = parseUUID(companyData, 2);
+                const major = companyData.getUint16(18, false);
+                const minor = companyData.getUint16(20, false);
+                const txPower = companyData.getInt8(22);
+                const rssi = event.rssi;
 
-            // Decodifica os dados do iBeacon
-            const uuid = parseUUID(companyData, 2);
-            const major = companyData.getUint16(18, false);
-            const minor = companyData.getUint16(20, false);
-            const txPower = companyData.getInt8(22);
-            const rssi = event.rssi;
+                const beaconId = `${uuid}-${major}-${minor}`;
+                
+                let beaconDiv = document.getElementById(beaconId);
+                if (!beaconDiv) {
+                    if (resultsDiv.innerHTML === 'Procurando...') resultsDiv.innerHTML = '';
+                    beaconDiv = document.createElement('div');
+                    beaconDiv.id = beaconId;
+                    resultsDiv.appendChild(beaconDiv);
+                }
 
-            const beaconId = `${uuid}-${major}-${minor}`;
-            
-            // Exibe os resultados na tela
-            let beaconDiv = document.getElementById(beaconId);
-            if (!beaconDiv) {
-                beaconDiv = document.createElement('div');
-                beaconDiv.id = beaconId;
-                resultsDiv.appendChild(beaconDiv);
+                beaconDiv.innerHTML = `
+                    <strong>iBeacon Encontrado!</strong><br>
+                    <strong>RSSI:</strong> ${rssi} dBm<br>
+                    <strong>UUID:</strong> ${uuid}<br>
+                    <strong>Major:</strong> ${major}<br>
+                    <strong>Minor:</strong> ${minor}<br>
+                    <strong>TX Power:</strong> ${txPower} dBm<br>
+                    <hr>
+                `;
+            } catch (error) {
+                // Se ocorrer um erro ao decodificar, ele será capturado aqui.
+                // Isso evita que o programa pare.
+                console.log('Ignorando pacote de anúncio não-iBeacon ou malformado.');
             }
-
-            beaconDiv.innerHTML = `
-                <strong>iBeacon Encontrado!</strong><br>
-                <strong>RSSI:</strong> ${rssi} dBm<br>
-                <strong>UUID:</strong> ${uuid}<br>
-                <strong>Major:</strong> ${major}<br>
-                <strong>Minor:</strong> ${minor}<br>
-                <strong>TX Power:</strong> ${txPower} dBm<br>
-                <hr>
-            `;
         }
 
         function parseUUID(dataView, offset) {
