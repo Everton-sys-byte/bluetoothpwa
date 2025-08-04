@@ -23,19 +23,19 @@
                     optionalServices: []
                 });
 
-                console.log(`Dispositivo ${device.name || device.id} selecionado. Observando advertisements...`);
+                resultsDiv.innerHTML += `Dispositivo ${device.name || device.id} selecionado. Observando advertisements...`;
                 const abortController = new AbortController();
                 device.addEventListener('advertisementreceived', handleAdvertisement);
                 await device.watchAdvertisements({ signal: abortController.signal });
 
                 setTimeout(() => {
                     abortController.abort();
-                    console.log('Scan parado.');
+                    resultsDiv.innerHTML += 'Scan parado.';
                     resultsDiv.innerHTML += '<p>Busca finalizada.</p>';
                 }, 30000);
 
             } catch (error) {
-                console.error('Erro principal:', error);
+                resultsDiv.innerHTML += 'Erro principal:', error;
                 resultsDiv.innerHTML = `Erro: ${error.message}`;
             }
         });
@@ -81,7 +81,7 @@
             } catch (error) {
                 // Se ocorrer um erro ao decodificar, ele será capturado aqui.
                 // Isso evita que o programa pare.
-                console.log('Ignorando pacote de anúncio não-iBeacon ou malformado.');
+                resultsDiv.innerHTML += 'Ignorando pacote de anúncio não-iBeacon ou malformado.';
             }
         }
 
