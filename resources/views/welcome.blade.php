@@ -48,7 +48,7 @@
                     .APK (TWA)</a>
                 <a class="btn btn-primary mt-2" href="{{route('scan.bluetooth')}}"
                     >Scan Bluetooth!</a>
-                <a class="btn btn-success mt-2" href="https://bluetooth.evertonportfolio.site/openMr?user=1&beacon=10"
+                <a class="btn btn-success mt-2" href="https://bluetooth.evertonportfolio.site/openApp?user=1&beacon=10"
                     target="_blank">Abrir o app Beacons</a>
             </div>
             <div class="col-lg-8 col-12">
