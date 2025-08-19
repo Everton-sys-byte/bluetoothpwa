@@ -87,7 +87,7 @@
         let html = ""
         // mostra informações de forma dinamica
         Object.entries(beacon).forEach(([key, value]) => {
-            html += `<strong>${key}:</strong>${value ?? "---"}<br>`;
+            html += `<strong>${key}:</strong>${value ?? "---"} ${value == 'distance' ? 'M' : ''}<br>`;
         })
         html += "<hr>"
         // substitui ":" por "_" para usar como id válido no DOM
