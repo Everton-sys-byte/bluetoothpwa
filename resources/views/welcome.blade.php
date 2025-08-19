@@ -82,7 +82,7 @@
         console.log(beacon)
         if (!beacon || !beacon.id)
             return
-        const id = beacon.i
+        const id = beacon.id
         const $container = $(".beacons")
         let html = ""
         // mostra informações de forma dinamica
