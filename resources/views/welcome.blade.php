@@ -70,39 +70,39 @@
 
 
 <script>
-    // const pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
-    //     cluster: 'us2'
-    // })
+    const pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
+        cluster: 'us2'
+    })
 
-    // const channel = pusher.subscribe('public')
+    const channel = pusher.subscribe('public')
 
     // // mensagens recebidas (listener)
-    // channel.bind('beaconScanning', function(data) {
-    //     const beacon = data.scannedBeacon
-    //     console.log(beacon)
-    //     if (!beacon || !beacon.id)
-    //         retur
-    //     const id = beacon.i
-    //     const $container = $(".beacons")
-    //     let html = ""
-    //     // mostra informações de forma dinamica
-    //     Object.entries(beacon).forEach(([key, value]) => {
-    //         html += `<strong>${key}:</strong>${value ?? "---"}<br>`;
-    //     })
-    //     html += "<hr>"
-    //     // substitui ":" por "_" para usar como id válido no DOM
-    //     // tenta selecionar um elemento que tenha esse id
-    //     let $el = $("#" + id.replace(/:/g, "_"))
-    //     // se tem elemento com esse id ele é atualizado
-    //     if ($el.length > 0) {
-    //         $el.html(html); // atualiza se já existir
-    //     } else {
-    //         // cria um novo elemento com ID único baseado no beacon ID se não existir
-    //         $el = $(`<div class="beacon" id="${id.replace(/:/g, "_")}"></div>`)
-    //             .html(html);
-    //         $container.append($el);
-    //     }
-    // })
+    channel.bind('beaconScanning', function(data) {
+        const beacon = data.scannedBeacon
+        console.log(beacon)
+        if (!beacon || !beacon.id)
+            retur
+        const id = beacon.i
+        const $container = $(".beacons")
+        let html = ""
+        // mostra informações de forma dinamica
+        Object.entries(beacon).forEach(([key, value]) => {
+            html += `<strong>${key}:</strong>${value ?? "---"}<br>`;
+        })
+        html += "<hr>"
+        // substitui ":" por "_" para usar como id válido no DOM
+        // tenta selecionar um elemento que tenha esse id
+        let $el = $("#" + id.replace(/:/g, "_"))
+        // se tem elemento com esse id ele é atualizado
+        if ($el.length > 0) {
+            $el.html(html); // atualiza se já existir
+        } else {
+            // cria um novo elemento com ID único baseado no beacon ID se não existir
+            $el = $(`<div class="beacon" id="${id.replace(/:/g, "_")}"></div>`)
+                .html(html);
+            $container.append($el);
+        }
+    })
 
 
     const scanButton = document.getElementById('btn-bluetooth');
