@@ -78,7 +78,7 @@
 
     // // mensagens recebidas (listener)
     channel.bind('beaconScanning', function(data) {
-        const beacon = data
+        const beacon = data.scannedBeacon
         console.log(beacon)
         if (!beacon || !beacon.id)
             return
