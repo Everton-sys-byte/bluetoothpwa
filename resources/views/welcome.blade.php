@@ -46,8 +46,7 @@
                 <a class="btn btn-primary mt-2" id="btn-download-apk"
                     href="{{ asset('downloads/Bluetooth.apk') }}">Download
                     .APK (TWA)</a>
-                <a class="btn btn-primary mt-2" href="{{route('scan.bluetooth')}}"
-                    >Scan Bluetooth!</a>
+                <a class="btn btn-primary mt-2" href="{{ route('scan.bluetooth') }}">Scan Bluetooth!</a>
                 <a class="btn btn-success mt-2" href="https://bluetooth.evertonportfolio.site/openApp?user=1&beacon=10"
                     target="_blank">Abrir o app Beacons</a>
             </div>
@@ -63,85 +62,63 @@
                 </div>
             </div>
             <div class="col-12" id="results"></div>
+            <video id="preview" style="width:100%;height:auto;" autoplay></video>
+            <div id="resultado"></div>
         </div>
     </div>
 </body>
 
-
-
+<script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
 <script>
     const pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
         cluster: 'us2'
-    })
+    });
 
-    const channel = pusher.subscribe('public')
+    const channel = pusher.subscribe('public');
 
-    // // mensagens recebidas (listener)
+    // Listener de beacons recebidos via Pusher
     channel.bind('beaconScanning', function(data) {
-        const beacon = data.scannedBeacon
-        console.log(beacon)
-        if (!beacon || !beacon.id)
-            return
-        const id = beacon.id
-        const $container = $(".beacons")
-        let html = ""
-        // mostra informações de forma dinamica
+        const beacon = data.scannedBeacon;
+        if (!beacon || !beacon.id) return;
+
+        const id = beacon.id;
+        const $container = $(".beacons");
+        let html = "";
+
         Object.entries(beacon).forEach(([key, value]) => {
             html += `<strong>${key}:</strong>${value ?? "---"} ${key == 'distance' ? 'M' : ''}<br>`;
-        })
-        html += "<hr>"
-        // substitui ":" por "_" para usar como id válido no DOM
-        // tenta selecionar um elemento que tenha esse id
-        let $el = $("#" + id.replace(/:/g, "_"))
-        // se tem elemento com esse id ele é atualizado
+        });
+        html += "<hr>";
+
+        let $el = $("#" + id.replace(/:/g, "_"));
         if ($el.length > 0) {
-            $el.html(html); // atualiza se já existir
+            $el.html(html);
         } else {
-            // cria um novo elemento com ID único baseado no beacon ID se não existir
-            $el = $(`<div class="beacon" id="${id.replace(/:/g, "_")}"></div>`)
-                .html(html);
+            $el = $(`<div class="beacon" id="${id.replace(/:/g, "_")}"></div>`).html(html);
             $container.append($el);
         }
-    })
-
+    });
 
     const scanButton = document.getElementById('btn-bluetooth');
-    const resultsDiv = document.getElementById('results');
-    const APPLE_COMPANY_ID = 0x004C; // ID da Apple para iBeacons
+    const resultsDiv = document.getElementById('results'); // <-- corrigido
+    const APPLE_COMPANY_ID = 0x004C;
 
+    // ---- Botão principal para scan com requestDevice ----
     scanButton.addEventListener('click', async () => {
         try {
             console.log('Solicitando dispositivo Bluetooth...');
             resultsDiv.innerHTML = 'Procurando...';
 
-            // Solicita permissão ao usuário para escanear
             const device = await navigator.bluetooth.requestDevice({
                 acceptAllDevices: true,
-                optionalServices: [] // Necessário para ver advertisements
+                optionalServices: []
             });
 
             resultsDiv.innerHTML =
-                `Dispositivo ${device.name || device.id} selecionado. Observando advertisements...`
+                `Dispositivo ${device.name || device.id} selecionado.`;
 
-            // AbortController para parar o scan depois de um tempo
-            const abortController = new AbortController();
-
-            // Adiciona o listener para "escutar" os pacotes
-            device.addEventListener('advertisementreceived', (event) => {
-                handleAdvertisement(event);
-            });
-
-            // Inicia o scan
-            await device.watchAdvertisements({
-                signal: abortController.signal
-            });
-
-            // Para o scan após 30 segundos para economizar bateria
-            setTimeout(() => {
-                abortController.abort();
-                console.log('Scan parado.');
-                resultsDiv.innerHTML += '<p>Busca finalizada.</p>';
-            }, 30000);
+            // OBS: advertisementreceived não dispara aqui
+            console.log("Dispositivo selecionado, para anúncios use o botão 'Low Energy Scan'");
 
         } catch (error) {
             console.error('Ocorreu um erro:', error);
@@ -149,16 +126,19 @@
         }
     });
 
+    // ---- Scan com Low Energy (funciona advertisementreceived) ----
     $('#btn-lowenergy').click(() => {
-        startLEScan()
-    })
+        startLEScan();
+    });
 
-    async function startLEScan(event) {
-        if (!navigator.bluetooth)
-            return
+    async function startLEScan() {
+        if (!navigator.bluetooth) {
+            alert("Seu navegador não suporta Web Bluetooth.");
+            return;
+        }
 
         try {
-            scan = await navigator.bluetooth.requestLEScan({
+            const scan = await navigator.bluetooth.requestLEScan({
                 acceptAllAdvertisements: true
             });
 
@@ -176,7 +156,7 @@
                     output += `<strong>Manufacturer Data:</strong> ${hex}<br><hr>`;
                 }
 
-                document.getElementById("resultsDiv").innerHTML += output;
+                resultsDiv.innerHTML += output; // <-- corrigido
             });
 
         } catch (error) {
@@ -184,21 +164,13 @@
         }
     }
 
+    // ---- Tratamento de pacotes iBeacon ----
     function handleAdvertisement(event) {
         const companyData = event.manufacturerData.get(APPLE_COMPANY_ID);
+        if (!companyData) return; // <-- corrigido
 
-        // Verifica se é um pacote da Apple
-        // if (!companyData) {
-        // return;
-        // }
+        if (companyData.byteLength < 23 || companyData.getUint16(0, false) !== 0x0215) return;
 
-        // `companyData` é um DataView. Verificamos se tem o tamanho esperado
-        // e o tipo de iBeacon (0x0215)
-        // if (companyData.byteLength < 23 || companyData.getUint16(0, false) !== 0x0215) {
-        // return;
-        // }
-
-        // Decodifica os dados do iBeacon
         const uuid = parseUUID(companyData, 2);
         const major = companyData.getUint16(18, false);
         const minor = companyData.getUint16(20, false);
@@ -207,7 +179,6 @@
 
         const beaconId = `${uuid}-${major}-${minor}`;
 
-        // Exibe os resultados na tela
         let beaconDiv = document.getElementById(beaconId);
         if (!beaconDiv) {
             beaconDiv = document.createElement('div');
@@ -216,14 +187,14 @@
         }
 
         beaconDiv.innerHTML = `
-                <strong>iBeacon Encontrado!</strong><br>
-                <strong>RSSI:</strong> ${rssi} dBm<br>
-                <strong>UUID:</strong> ${uuid}<br>
-                <strong>Major:</strong> ${major}<br>
-                <strong>Minor:</strong> ${minor}<br>
-                <strong>TX Power:</strong> ${txPower} dBm<br>
-                <hr>
-            `;
+            <strong>iBeacon Encontrado!</strong><br>
+            <strong>RSSI:</strong> ${rssi} dBm<br>
+            <strong>UUID:</strong> ${uuid}<br>
+            <strong>Major:</strong> ${major}<br>
+            <strong>Minor:</strong> ${minor}<br>
+            <strong>TX Power:</strong> ${txPower} dBm<br>
+            <hr>
+        `;
     }
 
     function parseUUID(dataView, offset) {
@@ -231,43 +202,33 @@
         for (let i = 0; i < 16; i++) {
             const hex = dataView.getUint8(offset + i).toString(16).padStart(2, '0');
             uuid += hex;
-            if (i === 3 || i === 5 || i === 7 || i === 9) {
-                uuid += '-';
-            }
+            if (i === 3 || i === 5 || i === 7 || i === 9) uuid += '-';
         }
         return uuid;
     }
 
+    // ---- QRCode (Instascan) ----
+    $(document).ready(function() {
+        let scanner = new Instascan.Scanner({
+            video: document.getElementById('preview')
+        });
 
-    // $(document).ready(function() {
+        scanner.addListener('scan', function(content) {
+            $("#resultado").text(content);
+            console.log("QRCode:", content);
+        });
 
-    //     $('#btn-bluetooth').on('click', async function() {
-    //         if (!navigator.bluetooth) {
-    //             alert('Seu navegador não suporta Web Bluetooth.');
-    //             return;
-    //         }
-
-    //         try {
-    //             const device = await navigator.bluetooth.requestDevice({
-    //                 acceptAllDevices: true,
-    //                 optionalServices: [
-    //                     'battery_service'
-    //                 ] // Pode mudar conforme o dispositivo
-    //             });
-
-    //             console.log('Dispositivo encontrado:', device);
-    //             alert(`Dispositivo: ${device.name || 'Sem nome'}\nID: ${device.id}`);
-
-    //             const server = await device.gatt.connect();
-    //             console.log('Conectado ao GATT server:', server);
-
-    //             // Aqui você pode continuar lendo características do serviço, se quiser.
-    //         } catch (error) {
-    //             console.error('Erro ao conectar com Bluetooth:', error);
-    //             alert('Erro: ' + error.message);
-    //         }
-    //     });
-    // });
+        Instascan.Camera.getCameras().then(function(cameras) {
+            if (cameras.length > 0) {
+                scanner.start(cameras[0]);
+            } else {
+                alert("Nenhuma câmera encontrada!");
+            }
+        }).catch(function(e) {
+            console.error(e);
+        });
+    });
 </script>
+
 
 </html>
