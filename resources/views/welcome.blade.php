@@ -10,6 +10,7 @@
     <title>Bluetooth</title>
 
     <link rel="manifest" href="{{ asset('manifest.json') }}" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 
     {{-- script relacionado a PWA (TWA) --}}
     <script>

@@ -6,6 +6,7 @@
   <title>Scanner de iBeacon (Experimental)</title>
   <meta name="theme-color" content="#2196f3" />
   <meta name="description" content="Scanner experimental de iBeacons via Web Bluetooth API" />
+  
   <style>
     body {
       font-family: Arial, sans-serif;

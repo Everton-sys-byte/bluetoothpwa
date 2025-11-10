@@ -59,6 +59,10 @@
     </div>
 
     <pre id="log"></pre>
+
+    <a class="btn btn-primary mt-2" id="btn-download-apk"
+                    href="{{ asset('downloads/Bluetooth.apk') }}">Download
+                    .APK (TWA)</a>
   </div>
 
   <script>
@@ -106,17 +110,17 @@
         const scan = await navigator.bluetooth.requestLEScan(options);
 
         log(`Scan iniciado:
-  acceptAllAdvertisements: ${scan.acceptAllAdvertisements}
-  active: ${scan.active}
-  filters: ${JSON.stringify(scan.filters)}`);
+          acceptAllAdvertisements: ${scan.acceptAllAdvertisements}
+          active: ${scan.active}
+          filters: ${JSON.stringify(scan.filters)}`);
 
         navigator.bluetooth.addEventListener('advertisementreceived', event => {
           log(`\n=== Dispositivo detectado ===
-Nome: ${event.device.name}
-ID: ${event.device.id}
-RSSI: ${event.rssi}
-TX Power: ${event.txPower}
-UUIDs: ${event.uuids}`);
+          Nome: ${event.device.name}
+          ID: ${event.device.id}
+          RSSI: ${event.rssi}
+          TX Power: ${event.txPower}
+          UUIDs: ${event.uuids}`);
 
           event.manufacturerData.forEach((value, key) => logDataView('Manufacturer', key, value));
           event.serviceData.forEach((value, key) => logDataView('Service', key, value));
