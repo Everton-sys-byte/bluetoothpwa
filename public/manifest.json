@@ -2,7 +2,7 @@
   "name": "Bluetooth App",
   "short_name": "Bluetooth",
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#ffffff",
   "theme_color": "#1a73e8",
   "description": "Progressive Web App do projeto Bluetooth",
