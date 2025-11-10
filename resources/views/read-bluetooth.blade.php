@@ -62,7 +62,7 @@
 
     <a class="btn btn-primary mt-2" id="btn-download-apk"
                     href="{{ asset('downloads/Bluetooth.apk') }}">Download
-                    .APK (TWA)</a>
+                    .APK (PWA)</a>
   </div>
 
   <script>
