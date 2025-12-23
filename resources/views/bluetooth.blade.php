@@ -1,161 +1,212 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Scanner de iBeacon (Experimental)</title>
-  <meta name="theme-color" content="#2196f3" />
-  <meta name="description" content="Scanner experimental de iBeacons via Web Bluetooth API" />
-  
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-      text-align: center;
-      background-color: #f5f5f5;
-    }
-    h1 {
-      color: #333;
-    }
-    button {
-      background-color: #2196f3;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      font-size: 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin: 20px 0;
-    }
-    button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-    }
-    #log {
-      text-align: left;
-      background-color: #fff;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 10px;
-      margin-top: 20px;
-      height: 300px;
-      overflow-y: auto;
-      font-family: monospace;
-      font-size: 12px;
-      color: #333;
-    }
-    .info {
-      color: #555;
-      font-size: 14px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beacon Scanner Pro - Web Bluetooth</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #ca8a04;
+            --bg: #f8fafc;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: #1e293b; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        
+        h1 { margin-top: 0; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+
+        /* Checklist de Diagnóstico */
+        .checklist { margin-bottom: 25px; padding: 15px; border-radius: 8px; background: #f1f5f9; border: 1px solid #e2e8f0; }
+        .check-item { display: flex; align-items: center; margin-bottom: 8px; font-weight: 500; }
+        .status-icon { margin-right: 10px; width: 20px; height: 20px; border-radius: 50%; display: inline-block; }
+        .valid { color: var(--success); }
+        .invalid { color: var(--danger); }
+        
+        /* Controles */
+        .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+        button { 
+            background: var(--primary); color: white; border: none; padding: 12px 24px; 
+            border-radius: 6px; cursor: pointer; font-weight: 600; transition: opacity 0.2s;
+        }
+        button:disabled { background: #94a3b8; cursor: not-allowed; }
+        button:hover:not(:disabled) { opacity: 0.9; }
+
+        /* Tabela */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #f8fafc; text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-family: monospace; }
+        
+        .rssi-cell { font-weight: bold; }
+        .signal-bg { width: 100px; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; display: inline-block; vertical-align: middle; margin-left: 10px; }
+        .signal-fill { height: 100%; background: var(--success); transition: width 0.3s ease; }
+        
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; background: #e2e8f0; }
+    </style>
 </head>
 <body>
-  <h1>📡 Scanner de iBeacon</h1>
-  <p class="info">Clique no botão abaixo para escanear dispositivos iBeacon próximos.</p>
-  <p class="info">⚠️ Requer Chrome/Edge no Android e conexão HTTPS.</p>
 
-  <button id="scanButton" onclick="scanForBeacons()" disabled>🔍 Escanear iBeacons</button>
+<div class="container">
+    <h1>Scanner de Beacons BLE</h1>
 
-  <div id="log">Aguardando início...</div>
+    <div class="checklist" id="checklist">
+        <div class="check-item" id="check-https">
+            <span class="status-icon"></span> Contexto Seguro (HTTPS)
+        </div>
+        <div class="check-item" id="check-api">
+            <span class="status-icon"></span> Web Bluetooth API
+        </div>
+        <div class="check-item" id="check-flag">
+            <span class="status-icon"></span> Experimental Scanning Flag
+        </div>
+    </div>
 
-  <script>
-    const log = document.getElementById('log');
-    const scanButton = document.getElementById('scanButton');
+    <div class="controls">
+        <button id="btnStart" disabled>Iniciar Escaneamento</button>
+        <span id="scanStatusText">Verificando requisitos...</span>
+    </div>
 
-    // Habilitar botão após o evento beforeinstallprompt (indica que estamos em um ambiente PWA compatível)
-    window.addEventListener('load', () => {
-      // Mesmo sem PWA, vamos habilitar o botão no load (mas o Bluetooth precisa de interação)
-      scanButton.disabled = false;
-      log.textContent = 'Pronto para escanear. Clique no botão.';
-    });
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Dispositivo / Name</th>
+                    <th>ID / MAC (Obfuscated)</th>
+                    <th>RSSI (Sinal)</th>
+                </tr>
+            </thead>
+            <tbody id="deviceList">
+                <tr>
+                    <td colspan="3" style="text-align:center; color:#94a3b8; padding: 40px;">Nenhum beacon detectado. Clique em Iniciar.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 
-    async function scanForBeacons() {
-      log.textContent = 'Iniciando escaneamento BLE...\n';
+<script>
+    const btnStart = document.getElementById('btnStart');
+    const scanStatusText = document.getElementById('scanStatusText');
+    const deviceListBody = document.getElementById('deviceList');
+    
+    let devicesFound = new Map();
+    let isScanning = false;
 
-      try {
-        // Solicitar dispositivo BLE com escuta de anúncios
-        const device = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: [] // Não precisamos de serviços específicos
-        });
+    // --- 1. Lógica de Diagnóstico Programático ---
+    function runDiagnostics() {
+        const tests = {
+            https: window.isSecureContext,
+            api: 'bluetooth' in navigator,
+            flag: typeof navigator.bluetooth?.requestLEScan === 'function'
+        };
 
-        device.addEventListener('advertisementreceived', event => {
-          const { device: btDevice, rssi, manufacturerData, serviceData } = event;
+        updateCheckUI('check-https', tests.https);
+        updateCheckUI('check-api', tests.api);
+        updateCheckUI('check-flag', tests.flag);
 
-          const name = btDevice.name || 'Desconhecido';
-          log.textContent += `\n🔹 Dispositivo: ${name}`;
-          log.textContent += `\n   RSSI: ${rssi} dBm`;
-
-          // Verificar manufacturerData (onde está o iBeacon)
-          let foundBeacon = false;
-          for (const [companyId, data] of manufacturerData) {
-            const dataHex = Array.from(data).map(b => b.toString(16).padStart(2, '0')).join('');
-            log.textContent += `\n   Manufacturer ID: 0x${companyId.toString(16).toUpperCase()}`;
-            log.textContent += `\n   Dados: ${dataHex}`;
-
-            // iBeacon usa Company ID Apple: 0x004C e começa com 0x0215
-            if (companyId === 0x004C && dataHex.length >= 50 && dataHex.substr(2, 6) === '0215') {
-              // Estrutura: 4c00 0215 [UUID 32] [Major 4] [Minor 4] [TxPower 2]
-              const uuid = [
-                dataHex.substr(8, 8),
-                dataHex.substr(16, 4),
-                dataHex.substr(20, 4),
-                dataHex.substr(24, 4),
-                dataHex.substr(28, 12)
-              ].join('-');
-              const major = parseInt(dataHex.substr(36, 4), 16);
-              const minor = parseInt(dataHex.substr(40, 4), 16);
-              const txPower = parseInt(dataHex.substr(44, 2), 16) - 256; // signed 8-bit
-
-              const distance = estimateDistance(txPower, rssi);
-
-              log.textContent += `\n   ✅ iBeacon Detectado!`;
-              log.textContent += `\n      UUID: ${uuid}`;
-              log.textContent += `\n      Major: ${major}`;
-              log.textContent += `\n      Minor: ${minor}`;
-              log.textContent += `\n      Potência (Tx): ${txPower} dBm`;
-              log.textContent += `\n      Distância estimada: ${distance.toFixed(2)} m`;
-              log.textContent += '\n' + '-'.repeat(40);
-
-              foundBeacon = true;
-            }
-          }
-
-          if (!foundBeacon) {
-            log.textContent += `\n   ❌ Não é um iBeacon reconhecido.\n`;
-          }
-        });
-
-        // Iniciar escuta de anúncios
-        device.addEventListener('gattserverdisconnected', () => {
-          log.textContent += '\n❌ Conexão BLE perdida.\n';
-        });
-
-        // Conectar para começar a receber anúncios
-        await device.gatt.connect();
-        log.textContent += '\n🟢 Escaneamento ativo... (pare de escanear recarregando a página)\n';
-
-      } catch (error) {
-        log.textContent += `\n❌ Erro: ${error.message}\n`;
-        if (error.name === 'NotAllowedError') {
-          log.textContent += 'Você precisa permitir o acesso ao Bluetooth e interagir com a página.\n';
+        if (tests.https && tests.api && tests.flag) {
+            btnStart.disabled = false;
+            scanStatusText.textContent = "Pronto para escanear.";
+            scanStatusText.className = "valid";
+        } else {
+            scanStatusText.textContent = "Requisitos pendentes. Verifique a lista acima.";
+            scanStatusText.className = "invalid";
         }
-      }
     }
 
-    // Função para estimar distância com base em RSSI e TxPower
-    function estimateDistance(txPower, rssi) {
-      if (rssi === 0) return -1;
-      const ratio = rssi / txPower;
-      if (ratio < 1.0) {
-        return Math.pow(ratio, 10);
-      } else {
-        return 0.89976 * Math.pow(ratio, 7.7095) + 0.111;
-      }
+    function updateCheckUI(elementId, passed) {
+        const el = document.getElementById(elementId);
+        const icon = el.querySelector('.status-icon');
+        if (passed) {
+            el.classList.add('valid');
+            icon.style.backgroundColor = 'var(--success)';
+            icon.innerHTML = '✓';
+            icon.style.color = 'white';
+            icon.style.textAlign = 'center';
+            icon.style.fontSize = '12px';
+        } else {
+            el.classList.add('invalid');
+            icon.style.backgroundColor = 'var(--danger)';
+            icon.innerHTML = '✕';
+            icon.style.color = 'white';
+            icon.style.textAlign = 'center';
+            icon.style.fontSize = '12px';
+        }
     }
-  </script>
+
+    // --- 2. Lógica de Escaneamento ---
+    async function startScan() {
+        if (isScanning) return;
+
+        try {
+            // Solicita permissão e inicia o scan
+            // O filtro acceptAllAdvertisements permite ver iBeacons, Eddystone, etc.
+            const scan = await navigator.bluetooth.requestLEScan({
+                keepRepeatedDevices: true,
+                acceptAllAdvertisements: true
+            });
+
+            isScanning = true;
+            btnStart.disabled = true;
+            btnStart.textContent = "Escaneando...";
+            scanStatusText.textContent = "Ouvindo pacotes BLE...";
+
+            navigator.bluetooth.addEventListener('advertisementreceived', event => {
+                // Atualiza o Map com os dados mais recentes
+                devicesFound.set(event.device.id, {
+                    name: event.device.name || "Unknown",
+                    id: event.device.id,
+                    rssi: event.rssi,
+                    lastSeen: new Date().toLocaleTimeString()
+                });
+
+                renderTable();
+            });
+
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao iniciar scan: " + error.message);
+        }
+    }
+
+    function renderTable() {
+        // Ordenar por RSSI decrescente (ex: -30dBm é maior que -90dBm)
+        const sorted = Array.from(devicesFound.values())
+            .sort((a, b) => b.rssi - a.rssi);
+
+        deviceListBody.innerHTML = "";
+
+        sorted.forEach(device => {
+            const row = document.createElement('tr');
+            
+            // Cálculo de força do sinal (0 a 100)
+            // Geralmente RSSI varia de -100 (ruim) a -30 (excelente)
+            const strength = Math.min(Math.max(2 * (device.rssi + 100), 0), 100);
+
+            row.innerHTML = `
+                <td>
+                    <strong>${device.name}</strong><br>
+                    <span class="badge">Visto às: ${device.lastSeen}</span>
+                </td>
+                <td style="font-size: 0.75rem; color: #64748b;">${device.id}</td>
+                <td class="rssi-cell">
+                    ${device.rssi} dBm
+                    <div class="signal-bg">
+                        <div class="signal-fill" style="width: ${strength}%"></div>
+                    </div>
+                </td>
+            `;
+            deviceListBody.appendChild(row);
+        });
+    }
+
+    // Inicialização
+    btnStart.addEventListener('click', startScan);
+    window.onload = runDiagnostics;
+</script>
+
 </body>
 </html>
