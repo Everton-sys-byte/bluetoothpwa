@@ -30,6 +30,8 @@ class BeaconMonitor extends Component
 
         // atualiza a tabela
         $this->beacons = $beacons;
+
+        $this->dispatch('close-delete-confirmation');
     }
 
     public function render()
