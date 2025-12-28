@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Bluetooth</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-
+    @livewireStyles
 </head>
 <body>
     @livewire('counter')
     <livewire:beacon-monitor />
+    @livewireScripts
 </body>
 </html>
