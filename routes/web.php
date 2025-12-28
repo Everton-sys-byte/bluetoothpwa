@@ -1,6 +1,8 @@
 <?php
 
+use App\Events\BeaconUpdated;
 use App\Http\Controllers\PusherController;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,12 +17,15 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    // return view('welcome');
-    return view('read-bluetooth');
+    return view('welcome');
+    // return view('read-bluetooth');
 });
+
 
 Route::get('/bluetooth', function () {
     return view('bluetooth');
 })->name('scan.bluetooth');
+
+Broadcast::routes();
 
 
