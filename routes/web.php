@@ -26,6 +26,10 @@ Route::get('/bluetooth', function () {
     return view('bluetooth');
 })->name('scan.bluetooth');
 
+Route::get('/cortina', function () {
+    return view('cortina');
+});
+
 Broadcast::routes();
 
 
